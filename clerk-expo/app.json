@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Vittarox",
-    "slug": "Vittarox",
+    "name": "clerk-expo",
+    "slug": "clerk-expo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "vittarox",
+    "scheme": "clerkexpo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -38,9 +38,7 @@
             "backgroundColor": "#000000"
           }
         }
-      ],
-      "@clerk/expo",
-      "expo-secure-store"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
