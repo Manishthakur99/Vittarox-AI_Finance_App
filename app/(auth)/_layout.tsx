@@ -9,8 +9,8 @@ export default function AuthLayout() {
     return null;
   }
 
-  if (!isSignedIn) {
-    return <Redirect href="/" />;
+  if (isSignedIn) {
+    return <Redirect href="/(root)/(tabs)" />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;

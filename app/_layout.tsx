@@ -1,25 +1,18 @@
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ClerkProvider } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
+import { Slot } from "expo-router";
 import "../global.css";
+
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+
+if (!publishableKey) {
+  throw new Error("Add your Clerk Publishable Key to the .env file");
+}
 
 export default function RootLayout() {
   return (
-    <SafeAreaView>
-      <View style={{ padding: 20 }}>
-        <Text>Welcome jee</Text>
-        <TextInput placeholder="Enter text here" />
-        <TouchableOpacity
-          style={{
-            backgroundColor: "#2563EB",
-            padding: 12,
-            borderRadius: 8,
-            marginTop: 10,
-            alignItems: "center",
-          }}
-        >
-          <Text>Search</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+      <Slot />
+    </ClerkProvider>
   );
 }
