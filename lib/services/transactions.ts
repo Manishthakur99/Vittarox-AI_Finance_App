@@ -42,3 +42,37 @@ export async function getTransactions(
   if (error) throw error;
   return data as Transaction[];
 }
+
+export async function deleteTransaction(
+  supabase: SupabaseClient,
+  transactionId: string,
+  accountId: string,
+  amount: number,
+  type: TransactionType,
+) {
+  const { error: deleteError } = await supabase
+    .from("transactions")
+    .delete()
+    .eq("id", transactionId);
+
+  if (deleteError) return { error: deleteError };
+
+  const { data: account, error: fetchError } = await supabase
+    .from("accounts")
+    .select("balance")
+    .eq("id", accountId)
+    .single();
+
+  if (fetchError) return { error: fetchError };
+
+  const delta = type === "INCOME" ? -amount : amount;
+
+  const { error: balanceError } = await supabase
+    .from("accounts")
+    .update({ balance: account.balance + delta })
+    .eq("id", accountId);
+
+  if (balanceError) return { error: balanceError };
+
+  return { error: null };
+}
