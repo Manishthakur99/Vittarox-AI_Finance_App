@@ -1,6 +1,8 @@
 import { AIActionCard } from "@/components/AIActionCard";
 import { CalendarPicker } from "@/components/CalenderPicker";
 import { PillGroup } from "@/components/PillGroup";
+import { ReceiptScannerModal } from "@/components/ReceiptScannerModal";
+import { VoiceRecorderModal } from "@/components/VoiceRecorderModal";
 import {
   CategoryKey,
   EXPENSE_CATEGORIES,
@@ -403,6 +405,17 @@ export default function AddTransaction() {
           </View>
         </View>
       )}
+      <VoiceRecorderModal
+        visible={voiceModalOpen}
+        onClose={() => setVoiceModalOpen(false)}
+        onExtracted={handleVoiceExtracted}
+      />
+
+      <ReceiptScannerModal
+        visible={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onCaptured={handleReceiptCaptured}
+      />
     </SafeAreaView>
   );
 }
