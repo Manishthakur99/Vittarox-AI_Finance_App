@@ -1,11 +1,8 @@
 import {
-    CATEGORY_KEYS_EXPENSE,
-    CATEGORY_KEYS_INCOME,
-    CategoryKey,
+  CATEGORY_KEYS_EXPENSE,
+  CATEGORY_KEYS_INCOME,
+  CategoryKey,
 } from "@/constants/categories";
-import type { ExtractedTransaction } from "@/types/transaction";
-
-export type { ExtractedTransaction } from "@/types/transaction";
 
 const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent";
