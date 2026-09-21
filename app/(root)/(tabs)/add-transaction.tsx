@@ -40,6 +40,8 @@ import {
 } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSupabase } from "@/hooks/useSupabase";
+
 
 const TYPE_OPTIONS = [
   { key: "EXPENSE", label: "Expense" },
@@ -58,6 +60,7 @@ const DEFAULT_VALUES = (accounts: Account[]): TransactionFormValues => ({
 export default function AddTransaction() {
   const { user } = useUser();
   const router = useRouter();
+  const supabase = useSupabase();
   const params = useLocalSearchParams<{ action?: string }>();
 
   const {
@@ -130,22 +133,28 @@ export default function AddTransaction() {
   };
 
   const handleReceiptCaptured = async (base64: string, mimeType: string) => {
-    setScannerOpen(false);
-    setScanning(true);
-    try {
-      const extracted = await extractTransactionFromReceipt(base64, mimeType);
-      applyExtraction(extracted);
-      setInputMethod("RECEIPT_SCAN");
-    } catch (err) {
-      console.error("Receipt scan failed:", err);
-      Alert.alert(
-        "Error",
-        "Couldn't read that receipt. Try again or enter it manually.",
-      );
-    } finally {
-      setScanning(false);
-    }
-  };
+  if (!user) return;
+  setScannerOpen(false);
+  setScanning(true);
+  try {
+    const extracted = await extractTransactionFromReceipt(
+      base64,
+      mimeType,
+      supabase,
+      user.id,
+    );
+    applyExtraction(extracted);
+    setInputMethod("RECEIPT_SCAN");
+  } catch (err) {
+    console.error("Receipt scan failed:", err);
+    Alert.alert(
+      "Error",
+      "Couldn't read that receipt. Try again or enter it manually.",
+    );
+  } finally {
+    setScanning(false);
+  }
+};
 
   const handleVoiceExtracted = (result: ExtractedTransaction) => {
     applyExtraction(result);
