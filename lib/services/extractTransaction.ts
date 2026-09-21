@@ -3,9 +3,32 @@ import {
   CATEGORY_KEYS_INCOME,
   CategoryKey,
 } from "@/constants/categories";
+import { assertWithinAiLimit } from "@/lib/services/aiUsage";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent";
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retries = 3,
+  delayMs = 1000,
+): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const res = await fetch(url, options);
+
+    if (res.ok) return res;
+
+    if ((res.status === 503 || res.status === 429) && attempt < retries) {
+      await new Promise((r) => setTimeout(r, delayMs * Math.pow(2, attempt)));
+      continue;
+    }
+
+    return res;
+  }
+  throw new Error("Unreachable");
+}
 
 export type ExtractedTransaction = {
   type: "EXPENSE" | "INCOME" | null;
@@ -40,7 +63,7 @@ async function callGemini(
   const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
   if (!apiKey) throw new Error("Missing EXPO_PUBLIC_GEMINI_API_KEY");
 
-  const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+  const res = await fetchWithRetry(`${GEMINI_URL}?key=${apiKey}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -57,6 +80,7 @@ async function callGemini(
     }),
   });
 
+
   if (!res.ok) {
     const errText = await res.text();
     throw new Error(`Gemini request failed: ${errText}`);
@@ -72,7 +96,11 @@ async function callGemini(
 export async function extractTransactionFromReceipt(
   base64Image: string,
   mimeType: string,
+  supabase: SupabaseClient,
+  userId: string,
 ): Promise<ExtractedTransaction> {
+  await assertWithinAiLimit(supabase, userId);
+
   const prompt = `You are reading a receipt photo for a personal finance app. Extract the transaction details.
 
 - "type" is always "EXPENSE" for a receipt.
@@ -89,7 +117,11 @@ export async function extractTransactionFromReceipt(
 export async function extractTransactionFromVoice(
   base64Audio: string,
   mimeType: string,
+  supabase: SupabaseClient,
+  userId: string,
 ): Promise<ExtractedTransaction> {
+  await assertWithinAiLimit(supabase, userId);
+
   const today = new Date().toISOString().slice(0, 10);
   const prompt = `You are transcribing a short voice note for a personal finance app where the user is logging a transaction (e.g. "I spent 400 on groceries yesterday" or "Got 5000 rupees freelance payment today"). Today's date is ${today}. Extract the transaction details.
 

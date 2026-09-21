@@ -1,5 +1,6 @@
 import { useBudgetQuery } from "@/hooks/queries/useBudgetQuery";
 import { useTransactionsQuery } from "@/hooks/queries/useTransactionsQuery";
+import { useSupabase } from "@/hooks/useSupabase";
 import { askAssistant } from "@/lib/services/assistant";
 import { useUserStore } from "@/store/userStore";
 import { useUser } from "@clerk/expo";
@@ -57,6 +58,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
 export default function AssistantScreen() {
   const { user } = useUser();
+  const supabase = useSupabase();
   const currency = useUserStore((s) => s.currency);
   const { refetch: refetchTransactions } = useTransactionsQuery();
   const { refetch: refetchBudget } = useBudgetQuery();
@@ -79,19 +81,28 @@ export default function AssistantScreen() {
     try {
       const [{ data: transactions = [] }, { data: budget = null }] =
         await Promise.all([refetchTransactions(), refetchBudget()]);
-      const reply = await askAssistant(text, transactions, budget, currency);
+      const reply = await askAssistant(
+        text,
+        transactions,
+        budget,
+        currency,
+        supabase,
+        user.id,
+      );
       setMessages((prev) => [
         ...prev,
         { id: (Date.now() + 1).toString(), role: "assistant", content: reply },
       ]);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Assistant error:", err);
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: "Sorry, something went wrong answering that. Try again.",
+          content: err.message?.includes("limit")
+            ? err.message
+            : "Sorry, something went wrong answering that. Try again.",
         },
       ]);
     } finally {
