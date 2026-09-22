@@ -24,6 +24,8 @@ import Animated, {
     withSequence,
     withTiming,
 } from "react-native-reanimated";
+import { useSupabase } from "@/hooks/useSupabase";
+import { useUser } from "@clerk/expo";
 
 type Status = "idle" | "recording" | "processing" | "error";
 
@@ -103,7 +105,10 @@ export function VoiceRecorderModal({
 }) {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [status, setStatus] = useState<Status>("idle");
+  const supabase = useSupabase();
+  const { user } = useUser();
   const [seconds, setSeconds] = useState(0);
+const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const orbScale = useSharedValue(1);
 
@@ -171,11 +176,22 @@ export function VoiceRecorderModal({
 
       const file = new File(uri);
       const base64 = await file.base64();
-      const result = await extractTransactionFromVoice(base64, "audio/m4a");
-      onExtracted(result);
+      if (!user) throw new Error("Not signed in");
+      const result = await extractTransactionFromVoice(
+        base64,
+        "audio/m4a",
+        supabase,
+        user.id,
+      );
+            onExtracted(result);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Voice extraction failed:", err);
+      setErrorMessage(
+        err.message?.includes("limit")
+          ? err.message
+          : "Couldn't process that. Check your microphone permission and try again.",
+      );
       setStatus("error");
     }
   };
@@ -202,9 +218,9 @@ export function VoiceRecorderModal({
           {status === "error" ? (
             <>
               <Feather name="alert-circle" size={32} color="#FF6B4A" />
-              <Text className="text-white/60 text-sm mt-3 mb-6 text-center">
-                Couldn&apos;t process that. Check your microphone permission and
-                try again.
+                            <Text className="text-white/60 text-sm mt-3 mb-6 text-center">
+                {errorMessage ??
+                  "Couldn't process that. Check your microphone permission and try again."}
               </Text>
               <TouchableOpacity
                 onPress={onClose}
